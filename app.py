@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import plotly.express as px
+import plotly.graph_objects as go
 from pathlib import Path
 
 from sklearn.model_selection import train_test_split, cross_val_score
@@ -18,135 +19,94 @@ from sklearn.metrics import (
 # ----------------------------- PAGE CONFIG ------------------------------------
 st.set_page_config(
     page_title="PeoplePulse | Employee Analytics",
-    page_icon="📈",
+    page_icon="◆",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ----------------------------- PROFESSIONAL UI -------------------------------
+# ----------------------------- MODERN UI -------------------------------------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
-    :root { --ink:#14213a; --muted:#718096; --blue:#2563eb; --cyan:#06b6d4; --violet:#7c3aed; }
-    html, body, [class*="css"] { font-family: Manrope, Inter, sans-serif; }
-    .stApp { background: radial-gradient(circle at 12% 5%, #e8f1ff 0, transparent 28%), radial-gradient(circle at 88% 18%, #f1eaff 0, transparent 24%), #f5f7fc; }
-    [data-testid="stHeader"] { background: rgba(245,247,252,.78); backdrop-filter: blur(14px); }
-    [data-testid="stSidebar"] { background: linear-gradient(165deg,#0b1222 0%,#111d35 58%,#172b4d 100%); border-right:1px solid rgba(148,163,184,.14); }
-    [data-testid="stSidebar"] * { color:#e8eef8 !important; }
-    [data-testid="stSidebar"] [data-testid="stFileUploader"] { background:rgba(255,255,255,.06); border:1px solid rgba(148,163,184,.22); border-radius:16px; padding:10px; }
-    .block-container { padding-top:1.35rem; padding-bottom:2.6rem; max-width:1540px; animation: pageIn .7s ease both; }
-    @keyframes pageIn { from {opacity:0; transform:translateY(12px)} to {opacity:1; transform:translateY(0)} }
-    @keyframes gradientFlow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
-    @keyframes heroReveal { from {opacity:0; transform:translateY(-14px) scale(.99)} to {opacity:1; transform:translateY(0) scale(1)} }
-    @keyframes cardRise { from {opacity:0; transform:translateY(18px)} to {opacity:1; transform:translateY(0)} }
-    @keyframes softPulse { 0%,100%{box-shadow:0 10px 28px rgba(37,99,235,.12)} 50%{box-shadow:0 16px 38px rgba(124,58,237,.2)} }
-    .hero { position:relative; overflow:hidden; background:linear-gradient(115deg,#0b1222,#173d72,#2563eb,#6d28d9); background-size:240% 240%; animation:heroReveal .8s ease both, gradientFlow 16s ease infinite; border-radius:24px; padding:29px 32px; color:white; margin-bottom:23px; box-shadow:0 18px 42px rgba(30,64,175,.18); }
-    .hero:before { content:""; position:absolute; width:310px;height:310px;right:-75px;top:-155px;border-radius:50%;border:1px solid rgba(255,255,255,.16);box-shadow:0 0 0 28px rgba(255,255,255,.035),0 0 0 58px rgba(255,255,255,.025); }
-    .hero:after { content:""; position:absolute; width:160px;height:160px;right:18%;bottom:-125px;border-radius:50%;background:rgba(255,255,255,.1);filter:blur(2px); }
-    .hero h1 { color:white; font-size:clamp(26px,3vw,36px); font-weight:800; letter-spacing:-1.1px; margin:0 0 9px; position:relative; z-index:1; }
-    .hero p { color:#dbeafe; margin:0; font-size:14px; max-width:850px; position:relative; z-index:1; }
-    .hero-tag { display:inline-block; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22); border-radius:999px; padding:6px 12px; font-size:11px; letter-spacing:.8px; margin-bottom:13px; backdrop-filter:blur(8px); position:relative; z-index:1; }
-    .section-title { font-size:22px; font-weight:800; color:var(--ink); margin:7px 0 3px; letter-spacing:-.4px; }
-    .section-subtitle { color:var(--muted); font-size:13px; margin-bottom:16px; }
-    div[data-testid="stMetric"] { background:rgba(255,255,255,.88); border:1px solid rgba(226,232,240,.95); padding:17px 19px; border-radius:18px; box-shadow:0 8px 24px rgba(15,23,42,.045); backdrop-filter:blur(10px); animation:cardRise .65s ease both; transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease; }
-    div[data-testid="stMetric"]:hover { transform:translateY(-4px); border-color:#bfdbfe; box-shadow:0 15px 32px rgba(37,99,235,.11); }
-    div[data-testid="stMetricLabel"] { color:#64748b; font-weight:700; }
-    div[data-testid="stMetricValue"] { color:#14213a; font-weight:800; letter-spacing:-.8px; }
-    div[data-testid="stTabs"] button { border-radius:11px 11px 0 0; font-weight:700; padding:11px 16px; transition:background .2s ease, color .2s ease; }
-    div[data-testid="stTabs"] button:hover { background:#eaf1ff; color:#1d4ed8; }
-    div[data-testid="stVerticalBlockBorderWrapper"] { background:rgba(255,255,255,.9); border:1px solid #e6ebf2; border-radius:17px; padding:13px 16px; box-shadow:0 7px 22px rgba(16,26,45,.035); }
-    [data-testid="stPlotlyChart"] { animation:cardRise .7s ease both; border-radius:16px; overflow:hidden; transition:transform .22s ease, box-shadow .22s ease; }
-    [data-testid="stPlotlyChart"]:hover { transform:translateY(-2px); box-shadow:0 12px 28px rgba(15,23,42,.07); }
-    [data-testid="stDataFrame"] { border:1px solid #e2e8f0; border-radius:13px; overflow:hidden; }
-    .small-note { color:#7b8798; font-size:12px; }
-    .stButton button, .stDownloadButton button, [data-testid="stFormSubmitButton"] button { border-radius:10px; font-weight:700; transition:transform .18s ease, box-shadow .18s ease; }
-    .stButton button:hover, .stDownloadButton button:hover, [data-testid="stFormSubmitButton"] button:hover { transform:translateY(-2px); box-shadow:0 8px 18px rgba(37,99,235,.15); }
-    input, textarea { border-radius:10px !important; }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+
+    :root {
+        --bg:#f6f7fb; --surface:#ffffff; --line:#e7e9f2; --ink:#0f172a; --muted:#64748b;
+        --accent:#4f46e5; --accent-2:#7c3aed; --accent-soft:#eef2ff;
+        --good:#10b981; --warn:#f59e0b; --bad:#f43f5e;
+        --radius:18px; --shadow:0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.10);
+    }
+    html, body, [class*="css"], .stApp { font-family:'Plus Jakarta Sans', system-ui, sans-serif; color:var(--ink); }
+    .stApp { background:var(--bg); }
+    [data-testid="stHeader"] { background:transparent; }
     footer { visibility:hidden; }
-    /* Clearly visible continuous motion */
-    @keyframes auroraMove { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
-    @keyframes orbitGlow { 0% { transform:translate(0,0) scale(1); opacity:.45; } 50% { transform:translate(-34px,22px) scale(1.12); opacity:.85; } 100% { transform:translate(0,0) scale(1); opacity:.45; } }
-    @keyframes livePulse { 0% { box-shadow:0 0 0 0 rgba(52,211,153,.65); } 70% { box-shadow:0 0 0 10px rgba(52,211,153,0); } 100% { box-shadow:0 0 0 0 rgba(52,211,153,0); } }
-    @keyframes shimmer { 0% { transform:translateX(-130%); } 100% { transform:translateX(130%); } }
-    @keyframes floatUp { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
-    .stApp { background-size:220% 220%; animation:auroraMove 22s ease infinite; }
-    .hero { background-size:300% 300%; animation:heroReveal .8s ease both, auroraMove 9s ease infinite; }
-    .hero:before { animation:orbitGlow 7s ease-in-out infinite; }
-    .hero:after { animation:floatUp 5s ease-in-out infinite; }
-    .hero-live { display:inline-flex; align-items:center; gap:8px; margin-top:17px; padding:7px 12px; border-radius:999px; background:rgba(4,18,40,.28); border:1px solid rgba(255,255,255,.2); color:#e0f2fe; font-size:12px; letter-spacing:.2px; position:relative; z-index:2; }
-    .live-dot { width:8px; height:8px; border-radius:50%; background:#34d399; animation:livePulse 1.8s infinite; }
-    div[data-testid="stMetric"] { position:relative; overflow:hidden; }
-    div[data-testid="stMetric"]:after { content:""; position:absolute; top:0; bottom:0; left:0; width:38%; background:linear-gradient(100deg,transparent,rgba(255,255,255,.62),transparent); transform:translateX(-130%); pointer-events:none; }
-    div[data-testid="stMetric"]:hover:after { animation:shimmer 1.05s ease; }
-    [data-testid="stPlotlyChart"] { animation:cardRise .7s ease both; }
-    [data-testid="stPlotlyChart"]:hover { transform:translateY(-3px) scale(1.003); box-shadow:0 16px 34px rgba(37,99,235,.13); }
-    .motion-strip { height:5px; border-radius:999px; margin:0 0 22px; overflow:hidden; background:#dbeafe; }
-    .motion-strip span { display:block; width:42%; height:100%; border-radius:999px; background:linear-gradient(90deg,#06b6d4,#2563eb,#8b5cf6,#ec4899); background-size:220% 100%; animation:stripFlow 3.2s linear infinite; }
-    @keyframes stripFlow { 0% { transform:translateX(-110%); background-position:0% 50%; } 100% { transform:translateX(260%); background-position:100% 50%; } }
-    /* HIGH-MOTION PREMIUM MODE: always-on visual motion */
-    @keyframes auroraSweep { 0%{background-position:0% 0%} 50%{background-position:100% 100%} 100%{background-position:0% 0%} }
-    @keyframes orbDriftA { 0%,100%{transform:translate3d(0,0,0) scale(1)} 35%{transform:translate3d(9vw,7vh,0) scale(1.16)} 70%{transform:translate3d(-5vw,12vh,0) scale(.9)} }
-    @keyframes orbDriftB { 0%,100%{transform:translate3d(0,0,0) scale(1)} 40%{transform:translate3d(-10vw,-5vh,0) scale(1.2)} 75%{transform:translate3d(4vw,8vh,0) scale(.88)} }
-    @keyframes borderRun { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
-    @keyframes titleGlow { 0%,100%{text-shadow:0 0 0 rgba(255,255,255,0)} 50%{text-shadow:0 0 24px rgba(147,197,253,.55)} }
-    @keyframes scanLine { 0%{transform:translateY(-120%);opacity:0} 15%{opacity:.5} 85%{opacity:.35} 100%{transform:translateY(360%);opacity:0} }
-    @keyframes chartFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-    @keyframes pulseRing { 0%{transform:scale(.75);opacity:.7} 100%{transform:scale(1.8);opacity:0} }
-    @keyframes dotBlink { 0%,100%{opacity:.35} 50%{opacity:1} }
-    .stApp { background:linear-gradient(125deg,#f4f8ff,#f7f3ff,#eefaff,#f5f7fc); background-size:350% 350%; animation:auroraSweep 24s ease-in-out infinite; }
-    .stApp:before,.stApp:after { content:""; position:fixed; z-index:0; pointer-events:none; width:34vw;height:34vw;max-width:520px;max-height:520px;border-radius:50%;filter:blur(55px);opacity:.22; }
-    .stApp:before { left:-12vw;top:18vh;background:radial-gradient(circle,#60a5fa 0%,#8b5cf6 42%,transparent 70%);animation:orbDriftA 18s ease-in-out infinite; }
-    .stApp:after { right:-12vw;bottom:5vh;background:radial-gradient(circle,#22d3ee 0%,#a78bfa 42%,transparent 72%);animation:orbDriftB 22s ease-in-out infinite; }
-    [data-testid="stAppViewContainer"] > .main { position:relative;z-index:1; }
-    .hero { border:1px solid rgba(255,255,255,.22); box-shadow:0 22px 55px rgba(37,99,235,.25), inset 0 1px 0 rgba(255,255,255,.22); }
-    .hero h1 { animation:titleGlow 4.5s ease-in-out infinite; }
-    .hero-tag { animation:floatUp 4s ease-in-out infinite; }
-    .hero-live { position:relative; }
-    .live-dot { position:relative; }
-    .live-dot:after { content:"";position:absolute;inset:-5px;border:1px solid #34d399;border-radius:50%;animation:pulseRing 1.8s ease-out infinite; }
-    .motion-strip { height:6px;box-shadow:0 0 18px rgba(59,130,246,.22); }
-    div[data-testid="stMetric"] { animation:cardRise .8s cubic-bezier(.2,.75,.25,1) both, softPulse 6s ease-in-out infinite; }
-    div[data-testid="stMetric"]:nth-child(2n) { animation-delay:.18s,1.1s; }
-    div[data-testid="stMetric"]:nth-child(3n) { animation-delay:.32s,2.1s; }
-    div[data-testid="stMetric"]:hover { transform:translateY(-8px) scale(1.025); box-shadow:0 20px 42px rgba(37,99,235,.2); }
-    div[data-testid="stMetric"]:before { content:"";position:absolute;inset:0;padding:1px;border-radius:18px;background:linear-gradient(120deg,transparent,#93c5fd,#c4b5fd,#67e8f9,transparent);background-size:250% 100%;animation:borderRun 7s linear infinite; -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none; }
-    [data-testid="stPlotlyChart"] { position:relative;animation:cardRise .8s ease both,chartFloat 7s ease-in-out infinite; }
-    [data-testid="stPlotlyChart"]:after { content:"";position:absolute;top:0;left:0;right:0;height:35%;background:linear-gradient(180deg,rgba(96,165,250,.08),transparent);pointer-events:none;animation:scanLine 8s ease-in-out infinite; }
-    div[data-testid="stVerticalBlockBorderWrapper"] { transition:transform .25s ease,box-shadow .25s ease; }
-    div[data-testid="stVerticalBlockBorderWrapper"]:hover { transform:translateY(-3px);box-shadow:0 16px 34px rgba(37,99,235,.10); }
-    div[data-testid="stTabs"] button[aria-selected="true"] { position:relative;color:#2563eb!important; }
-    div[data-testid="stTabs"] button[aria-selected="true"]:after { content:"";position:absolute;bottom:0;left:12%;width:76%;height:3px;border-radius:3px;background:linear-gradient(90deg,#06b6d4,#2563eb,#8b5cf6);background-size:200% 100%;animation:borderRun 2.5s linear infinite; }
-    .section-title { background:linear-gradient(90deg,#14213a,#2563eb,#7c3aed,#14213a);background-size:250% auto;background-clip:text;-webkit-background-clip:text;color:transparent;animation:borderRun 9s linear infinite; }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+    .block-container { max-width:1480px; padding:2rem 2.6rem 3rem; }
 
-    /* Full-screen animated canvas layer (kept behind Streamlit content) */
-    html, body, [data-testid="stAppViewContainer"], .stApp { background: transparent !important; }
-    .pp-animated-backdrop { position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; background:linear-gradient(120deg,#071326,#101b3d,#172554,#0b2540,#17143b); background-size:400% 400%; animation:ppBgShift 22s ease infinite; }
-    .pp-animated-backdrop:before { content:""; position:absolute; inset:-20%; opacity:.24; background-image:linear-gradient(rgba(125,211,252,.13) 1px,transparent 1px),linear-gradient(90deg,rgba(125,211,252,.13) 1px,transparent 1px); background-size:54px 54px; mask-image:linear-gradient(to bottom,black,transparent 90%); animation:ppGridDrift 28s linear infinite; }
-    .pp-blob { position:absolute; width:42vw; height:42vw; min-width:320px; min-height:320px; border-radius:50%; filter:blur(75px); opacity:.42; mix-blend-mode:screen; }
-    .pp-blob.one { left:-12vw; top:-10vh; background:radial-gradient(circle,#06b6d4 0%,#2563eb 34%,transparent 70%); animation:ppBlobOne 19s ease-in-out infinite; }
-    .pp-blob.two { right:-13vw; top:12vh; background:radial-gradient(circle,#8b5cf6 0%,#ec4899 30%,transparent 70%); animation:ppBlobTwo 24s ease-in-out infinite; }
-    .pp-blob.three { left:28vw; bottom:-28vh; background:radial-gradient(circle,#0ea5e9 0%,#6366f1 38%,transparent 72%); animation:ppBlobThree 21s ease-in-out infinite; }
-    .pp-blob.four { right:20vw; bottom:8vh; width:22vw;height:22vw; min-width:220px;min-height:220px; background:radial-gradient(circle,#22d3ee 0%,#3b82f6 42%,transparent 72%); animation:ppBlobFour 16s ease-in-out infinite; }
-    @keyframes ppBgShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
-    @keyframes ppGridDrift { from{transform:translate3d(0,0,0)} to{transform:translate3d(54px,54px,0)} }
-    @keyframes ppBlobOne { 0%,100%{transform:translate(0,0) scale(1)} 35%{transform:translate(22vw,12vh) scale(1.16)} 70%{transform:translate(8vw,30vh) scale(.88)} }
-    @keyframes ppBlobTwo { 0%,100%{transform:translate(0,0) scale(1)} 40%{transform:translate(-24vw,18vh) scale(1.12)} 75%{transform:translate(-8vw,-12vh) scale(.9)} }
-    @keyframes ppBlobThree { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-16vw,-22vh) scale(1.2)} }
-    @keyframes ppBlobFour { 0%,100%{transform:translate(0,0)} 50%{transform:translate(10vw,-14vh)} }
-    [data-testid="stAppViewContainer"] > .main { position:relative; z-index:1; background:transparent !important; }
-    [data-testid="stHeader"] { background:rgba(7,19,38,.24) !important; backdrop-filter:blur(16px); }
-    .block-container { position:relative; z-index:2; }
-    /* premium dark-glass content panels */
-    div[data-testid="stMetric"], div[data-testid="stVerticalBlockBorderWrapper"] { background:rgba(255,255,255,.91) !important; backdrop-filter:blur(18px); }
-    .hero { box-shadow:0 24px 70px rgba(37,99,235,.32),0 0 36px rgba(34,211,238,.12); }
-    @media (prefers-reduced-motion: reduce) { .pp-animated-backdrop,.pp-blob,.pp-animated-backdrop:before { animation:none !important; } }
+    /* ---------- Sidebar ---------- */
+    [data-testid="stSidebar"] { background:#0b1020; border-right:none; }
+    [data-testid="stSidebar"] > div:first-child { padding-top:1.4rem; }
+    [data-testid="stSidebar"] * { color:#cbd5e1; }
+    [data-testid="stSidebar"] h3 { color:#f8fafc !important; font-size:12px; text-transform:uppercase; letter-spacing:1.4px; font-weight:700; margin-top:.4rem; }
+    [data-testid="stSidebar"] hr { border-color:rgba(148,163,184,.16); }
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] section { background:rgba(255,255,255,.04); border:1.5px dashed rgba(148,163,184,.35); border-radius:14px; }
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] button { background:var(--accent); color:#fff; border:none; border-radius:10px; }
+    [data-testid="stSidebar"] [data-baseweb="select"] > div { background:rgba(255,255,255,.06); border:1px solid rgba(148,163,184,.25); border-radius:12px; }
+    [data-testid="stSidebar"] [data-baseweb="tag"] { background:rgba(99,102,241,.28); border-radius:8px; }
+    .brand { display:flex; align-items:center; gap:12px; margin-bottom:4px; }
+    .brand-logo { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; font-size:19px; background:linear-gradient(135deg,#6366f1,#a855f7); box-shadow:0 8px 20px -6px rgba(99,102,241,.7); }
+    .brand-name { font-size:18px; font-weight:800; color:#fff !important; letter-spacing:-.4px; line-height:1.1; }
+    .brand-sub { font-size:12px; color:#7c8aa5 !important; }
 
+    /* ---------- Header ---------- */
+    .topbar { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; margin-bottom:26px; }
+    .eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--accent); background:var(--accent-soft); padding:5px 12px; border-radius:999px; margin-bottom:12px; }
+    .eyebrow i { width:7px; height:7px; border-radius:50%; background:var(--good); display:inline-block; box-shadow:0 0 0 4px rgba(16,185,129,.18); }
+    .topbar h1 { font-size:clamp(28px,3.2vw,40px); font-weight:800; letter-spacing:-1.3px; line-height:1.08; margin:0 0 8px; color:var(--ink); }
+    .topbar h1 span { background:linear-gradient(90deg,var(--accent),var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .topbar p { color:var(--muted); font-size:15px; margin:0; max-width:720px; line-height:1.55; }
+    .chips { display:flex; gap:8px; flex-wrap:wrap; }
+    .chip { font-size:12px; font-weight:600; color:#334155; background:var(--surface); border:1px solid var(--line); padding:7px 13px; border-radius:999px; box-shadow:var(--shadow); }
+
+    /* ---------- KPI cards ---------- */
+    div[data-testid="stMetric"] { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px 18px; box-shadow:var(--shadow); position:relative; overflow:hidden; transition:transform .2s ease, box-shadow .2s ease; }
+    div[data-testid="stMetric"]:before { content:""; position:absolute; left:0; top:18px; bottom:18px; width:4px; border-radius:0 4px 4px 0; background:linear-gradient(180deg,var(--accent),var(--accent-2)); }
+    div[data-testid="stMetric"]:hover { transform:translateY(-2px); box-shadow:0 14px 34px -14px rgba(79,70,229,.28); }
+    div[data-testid="stMetricLabel"] p { color:var(--muted); font-size:12.5px; font-weight:600; text-transform:uppercase; letter-spacing:.7px; }
+    div[data-testid="stMetricValue"] { color:var(--ink); font-size:32px; font-weight:800; letter-spacing:-1px; }
+
+    /* ---------- Tabs as segmented pills ---------- */
+    div[data-testid="stTabs"] [role="tablist"] { gap:6px; background:var(--surface); border:1px solid var(--line); padding:6px; border-radius:16px; width:fit-content; box-shadow:var(--shadow); margin:26px 0 22px; border-bottom:none; }
+    div[data-testid="stTabs"] [data-baseweb="tab-highlight"], div[data-testid="stTabs"] [data-baseweb="tab-border"] { display:none; }
+    div[data-testid="stTabs"] button[role="tab"] { border-radius:11px; padding:9px 18px; height:auto; font-weight:600; color:var(--muted); background:transparent; transition:all .18s ease; }
+    div[data-testid="stTabs"] button[role="tab"]:hover { color:var(--ink); background:#f1f3f9; }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff !important; box-shadow:0 8px 18px -8px rgba(79,70,229,.8); }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] p { color:#fff !important; }
+
+    /* ---------- Section headings ---------- */
+    .section-title { font-size:22px; font-weight:800; letter-spacing:-.5px; color:var(--ink); margin:2px 0 4px; }
+    .section-subtitle { color:var(--muted); font-size:14px; margin-bottom:20px; }
+
+    /* ---------- Panels, charts, tables ---------- */
+    [data-testid="stPlotlyChart"] { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:10px 10px 4px; box-shadow:var(--shadow); overflow:hidden; }
+    [data-testid="stDataFrame"] { border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); }
+    div[data-testid="stExpander"] { background:var(--surface); border:1px solid var(--line) !important; border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+    div[data-testid="stExpander"] summary { font-weight:700; }
+    div[data-testid="stForm"] { background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:26px 26px 18px; box-shadow:var(--shadow); }
+    div[data-testid="stAlert"] { border-radius:14px; border:1px solid var(--line); }
+
+    /* ---------- Inputs & buttons ---------- */
+    input, textarea, [data-baseweb="select"] > div, [data-baseweb="input"] { border-radius:12px !important; }
+    [data-testid="stTextInput"] input { background:var(--surface); border:1px solid var(--line); padding:12px 14px; }
+    [data-testid="stTextInput"] input:focus { border-color:var(--accent); box-shadow:0 0 0 4px rgba(79,70,229,.12); }
+    .stButton button, .stDownloadButton button, [data-testid="stFormSubmitButton"] button { border-radius:12px; font-weight:700; padding:.65rem 1.2rem; border:1px solid var(--line); transition:all .18s ease; }
+    .stDownloadButton button { background:var(--surface); color:var(--ink); }
+    .stDownloadButton button:hover { border-color:var(--accent); color:var(--accent); transform:translateY(-1px); }
+    [data-testid="stFormSubmitButton"] button { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; border:none; box-shadow:0 12px 24px -10px rgba(79,70,229,.7); }
+    [data-testid="stFormSubmitButton"] button:hover { transform:translateY(-2px); box-shadow:0 16px 30px -10px rgba(79,70,229,.8); color:#fff; }
+
+    .small-note { color:#94a3b8; font-size:12.5px; text-align:center; padding-top:6px; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
 </style>
 """, unsafe_allow_html=True)
-
-# Full-viewport animated background layer
-st.markdown('''<div class="pp-animated-backdrop" aria-hidden="true"><div class="pp-blob one"></div><div class="pp-blob two"></div><div class="pp-blob three"></div><div class="pp-blob four"></div></div>''', unsafe_allow_html=True)
 
 # ----------------------------- CONSTANTS --------------------------------------
 REQUIRED = [
@@ -155,13 +115,27 @@ REQUIRED = [
 ]
 NUMERIC = REQUIRED[1:]
 TARGET = "Performance_Label"
-CLASS_COLORS = {"High": "#16a34a", "Medium": "#f59e0b", "Low": "#ef4444"}
+CLASS_COLORS = {"High": "#10b981", "Medium": "#f59e0b", "Low": "#f43f5e"}
+ACCENT_SCALE = ["#eef2ff", "#a5b4fc", "#4f46e5", "#312e81"]
+CHART_SEQUENCE = ["#4f46e5", "#a855f7", "#14b8a6"]
+
+_axis = dict(showgrid=True, gridcolor="#eef0f6", zeroline=False, linecolor="#e2e8f0",
+             tickfont=dict(size=12, color="#64748b"), title_font=dict(size=12, color="#64748b"))
+_template = go.layout.Template()
+_template.layout = go.Layout(
+    colorway=["#4f46e5", "#a855f7", "#14b8a6", "#f59e0b", "#f43f5e", "#0ea5e9"],
+    xaxis=dict(_axis, showgrid=False), yaxis=_axis,
+    title=dict(font=dict(size=16, color="#0f172a", family="Plus Jakarta Sans, sans-serif"), x=0.02, xanchor="left"),
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+                font=dict(size=12, color="#475569"), title=dict(font=dict(size=12, color="#94a3b8"))),
+    hoverlabel=dict(bgcolor="#0f172a", font=dict(color="white", size=12), bordercolor="#0f172a"),
+)
 PLOT_LAYOUT = dict(
-    template="plotly_white",
-    margin=dict(l=20, r=20, t=55, b=25),
-    font=dict(family="Inter, sans-serif", color="#334155"),
-    paper_bgcolor="white",
-    plot_bgcolor="white"
+    template=_template,
+    margin=dict(l=18, r=18, t=64, b=22),
+    font=dict(family="Plus Jakarta Sans, sans-serif", color="#334155"),
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)"
 )
 
 @st.cache_data
@@ -173,11 +147,16 @@ def load_sample():
 
 # ----------------------------- SIDEBAR ----------------------------------------
 with st.sidebar:
-    st.markdown("## 📈 PeoplePulse")
-    st.caption("Employee intelligence workspace")
+    st.markdown(
+        '<div class="brand"><div class="brand-logo">◆</div>'
+        '<div><div class="brand-name">PeoplePulse</div>'
+        '<div class="brand-sub">Employee intelligence</div></div></div>',
+        unsafe_allow_html=True
+    )
     st.divider()
+    st.markdown("### Data source")
     uploaded = st.file_uploader("Upload employee CSV", type=["csv"])
-    st.markdown("### Dashboard filters")
+    st.markdown("### Filters")
 
 try:
     raw = pd.read_csv(uploaded) if uploaded is not None else load_sample()
@@ -267,15 +246,18 @@ if filtered.empty:
     st.warning("No records match the selected filters. Update the filters in the sidebar.")
     st.stop()
 
-# ----------------------------- HERO --------------------------------------------
+# ----------------------------- HEADER ------------------------------------------
 st.markdown("""
-<div class="hero">
-  <div class="hero-tag">FDS PROJECT • DATA SCIENCE + MACHINE LEARNING</div>
-  <h1>Employee Performance Analytics</h1>
-  <p>Transform workforce data into measurable insights using Pandas, feature engineering and a Scikit-learn classification model.</p>
-  <div class="hero-live"><span class="live-dot"></span> LIVE ANALYTICS • Interactive dashboard</div>
+<div class="topbar">
+  <div>
+    <div class="eyebrow"><i></i> Live workspace</div>
+    <h1>Employee <span>Performance</span> Analytics</h1>
+    <p>Turn workforce data into clear insight with Pandas feature engineering and a Scikit-learn classification model.</p>
+  </div>
+  <div class="chips">
+    <span class="chip">Pandas</span><span class="chip">Random Forest</span><span class="chip">Plotly</span><span class="chip">Streamlit</span>
+  </div>
 </div>
-<div class="motion-strip"><span></span></div>
 """, unsafe_allow_html=True)
 
 # KPI row
@@ -340,11 +322,11 @@ precision, recall, f1, _ = precision_recall_fscore_support(
 
 # ----------------------------- NAV TABS ----------------------------------------
 tab_overview, tab_data, tab_model, tab_predict = st.tabs([
-    "📊 Analytics Overview", "🗂️ Data Explorer", "🧠 ML Model", "🔮 Prediction Studio"
+    "Overview", "Data Explorer", "ML Model", "Prediction Studio"
 ])
 
 with tab_overview:
-    st.markdown('<div class="section-title">Performance insights</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Performance overview</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-subtitle">Interactive charts respond to dataset uploads and sidebar filters.</div>', unsafe_allow_html=True)
 
     chart1, chart2 = st.columns(2)
@@ -370,7 +352,7 @@ with tab_overview:
         fig = px.bar(
             metrics, x=TARGET, y="Average", color="Indicator", barmode="group",
             text_auto=".1f", title="Average performance indicators",
-            color_discrete_sequence=["#2563eb", "#8b5cf6", "#14b8a6"]
+            color_discrete_sequence=CHART_SEQUENCE
         )
         fig.update_layout(**PLOT_LAYOUT, xaxis_title="", yaxis_title="Average value",
                           legend_title="Indicator")
@@ -413,7 +395,7 @@ with tab_data:
         ]
     st.dataframe(view_data, use_container_width=True, height=420, hide_index=True)
     st.download_button(
-        "⬇️ Download cleaned dataset",
+        "Download cleaned dataset",
         view_data.to_csv(index=False).encode("utf-8"),
         "cleaned_employee_data.csv", "text/csv"
     )
@@ -435,7 +417,7 @@ with tab_model:
 
     report = classification_report(y_test, predictions, output_dict=True, zero_division=0)
     report_df = pd.DataFrame(report).transpose()
-    with st.expander("📋 Classification report", expanded=True):
+    with st.expander("Classification report", expanded=True):
         st.dataframe(report_df.style.format("{:.3f}"), use_container_width=True)
 
     model_left, model_right = st.columns(2)
@@ -443,7 +425,7 @@ with tab_model:
         labels = sorted(y.unique())
         matrix = confusion_matrix(y_test, predictions, labels=labels)
         fig = px.imshow(
-            matrix, x=labels, y=labels, text_auto=True, color_continuous_scale="Blues",
+            matrix, x=labels, y=labels, text_auto=True, color_continuous_scale=ACCENT_SCALE,
             labels={"x": "Predicted", "y": "Actual", "color": "Count"},
             title="Confusion matrix"
         )
@@ -458,7 +440,7 @@ with tab_model:
             fig = px.bar(
                 importance.sort_values("Importance"), x="Importance", y="Feature",
                 orientation="h", text_auto=".3f", title="Top feature importance",
-                color="Importance", color_continuous_scale="Blues"
+                color="Importance", color_continuous_scale=ACCENT_SCALE
             )
             fig.update_layout(**PLOT_LAYOUT, yaxis_title="", xaxis_title="Importance",
                               coloraxis_showscale=False)
@@ -466,7 +448,7 @@ with tab_model:
         except Exception as exc:
             st.info(f"Feature importance could not be displayed: {exc}")
 
-    with st.expander("🔁 Cross-validation"):
+    with st.expander("Cross-validation"):
         folds = min(5, int(y.value_counts().min()))
         if folds >= 2:
             try:
@@ -498,7 +480,7 @@ with tab_predict:
         projects = p2.number_input("Projects completed", 0.0, 100.0, 4.0, 1.0)
         rating = p3.slider("Manager rating", 1.0, 5.0, 3.0, .5)
         salary = p1.number_input("Monthly salary (₹)", 0.0, value=45000.0, step=1000.0)
-        submit = st.form_submit_button("✨ Predict performance", use_container_width=True)
+        submit = st.form_submit_button("Predict performance", use_container_width=True)
 
     if submit:
         productivity = projects * 10 + attendance * .35 + training * .25
@@ -527,7 +509,7 @@ with tab_predict:
         fig.update_layout(**PLOT_LAYOUT, yaxis_tickformat=".0%", yaxis_title="Probability")
         st.plotly_chart(fig, use_container_width=True)
 
-st.markdown("---")
+st.markdown("<br>", unsafe_allow_html=True)
 st.markdown(
     '<div class="small-note">PeoplePulse • FDS academic prototype | '
     'Predictions are decision-support estimates and should not be used as the sole basis for employment decisions.</div>',
